@@ -1,3 +1,28 @@
+FROM nvidia/cuda:12.9.1-cudnn-devel-ubuntu24.04 AS builder
+
+# Install Python, git and other build tools
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-venv \
+    python3-dev \
+    git \
+    build-essential
+
+# Create python venv
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Upgrade pip / setuptools / wheel
+RUN pip install --upgrade pip setuptools wheel packaging triton
+
+# Install PyTorch for CUDA 12.9
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu129
+
+# Install SageAttention
+RUN git clone https://github.com/thu-ml/SageAttention.git
+WORKDIR /SageAttention
+RUN python setup.py install
+
 FROM nvidia/cuda:12.9.1-cudnn-runtime-ubuntu24.04
 
 ARG COMFYUI_VERSION=0.9.2
@@ -27,26 +52,22 @@ RUN apt-get update && apt-get install -y \
 # Clean up to reduce image size
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
+# Copy the venv from builder
+COPY --from=builder /opt/venv /opt/venv
+
 # Configure python venv
-RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Upgrade pip / setuptools / wheel
-RUN pip install --upgrade pip setuptools wheel packaging triton
+RUN pip list
 
-# Install PyTorch for CUDA 12.9
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu129
+# Copy the built wheel from builder stage
+COPY --from=builder /SageAttention/dist/*.whl /SageAttention/
 
-# Install SageAttention
-RUN git clone https://github.com/thu-ml/SageAttention.git
-WORKDIR /SageAttention
-RUN python setup.py install
+# Install SageAttention wheel
+RUN pip install /SageAttention/*.whl
 
 # Install comfy-cli
 RUN pip install comfy-cli
-
-# List all installed packages
-RUN pip list
 
 # Install ComfyUI
 RUN comfy --workspace /comfyui install --version "${COMFYUI_VERSION}" --cuda-version 12.9 --nvidia;
