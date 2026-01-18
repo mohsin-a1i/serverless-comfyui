@@ -39,13 +39,13 @@ RUN wget -qO- https://astral.sh/uv/install.sh | sh \
 ENV PATH="/opt/venv/bin:${PATH}"
 
 # Upgrade pip / setuptools / wheel
-RUN uv pip install --upgrade pip setuptools wheel
+RUN uv pip install --upgrade pip setuptools wheel packaging triton
 
 # Install PyTorch for CUDA 12.9
 RUN uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu129
 
 # Install comfy-cli
-RUN uv pip install comfy-cli triton
+RUN uv pip install comfy-cli
 
 # Install SageAttention
 RUN git clone https://github.com/thu-ml/SageAttention.git
