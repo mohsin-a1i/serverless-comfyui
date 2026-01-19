@@ -563,7 +563,7 @@ def handler(job):
         ws_url = f"ws://{COMFY_HOST}/ws?clientId={client_id}"
         print(f"worker-comfyui - Connecting to websocket: {ws_url}")
         ws = websocket.WebSocket()
-        ws.connect(ws_url, timeout=10)
+        ws.connect(ws_url, timeout=None)
         print(f"worker-comfyui - Websocket connected")
 
         # Queue the workflow
@@ -599,12 +599,8 @@ def handler(job):
                 out = ws.recv()
                 if isinstance(out, str):
                     message = json.loads(out)
-                    if message.get("type") == "status":
-                        status_data = message.get("data", {}).get("status", {})
-                        print(
-                            f"worker-comfyui - Status update: {status_data.get('exec_info', {}).get('queue_remaining', 'N/A')} items remaining in queue"
-                        )
-                    elif message.get("type") == "executing":
+                    json.dumps(message, indent=2)
+                    if message.get("type") == "executing":
                         data = message.get("data", {})
                         if (
                             data.get("node") is None
@@ -623,12 +619,9 @@ def handler(job):
                                 f"worker-comfyui - Execution error received: {error_details}"
                             )
                             errors.append(f"Workflow execution error: {error_details}")
-                            break
+                            break   
                 else:
                     continue
-            except websocket.WebSocketTimeoutException:
-                print(f"worker-comfyui - Websocket receive timed out. Still waiting...")
-                continue
             except websocket.WebSocketConnectionClosedException as closed_err:
                 try:
                     # Attempt to reconnect

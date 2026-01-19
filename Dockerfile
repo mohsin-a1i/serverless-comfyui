@@ -43,9 +43,6 @@ FROM nvidia/cuda:12.9.1-cudnn-runtime-ubuntu24.04
 # Speed up some cmake builds
 ENV CMAKE_BUILD_PARALLEL_LEVEL=8
 
-# Persistent Triton kernels
-ENV TRITON_HOME=/runpod-volume
-
 # Install git and other tools
 RUN apt-get update && apt-get install -y \
     curl \
