@@ -84,10 +84,6 @@ RUN /usr/bin/yes | comfy --workspace /app/comfyui install --version 0.9.2 --skip
 # Support for the network volume
 COPY src/extra_model_paths.yaml /app/comfyui/
 
-# Copy helper script to switch Comfy Manager network mode at container start
-COPY scripts/comfy-manager-set-mode.sh /usr/local/bin/comfy-manager-set-mode
-RUN chmod +x /usr/local/bin/comfy-manager-set-mode
-
 # Add script to install custom nodes
 COPY scripts/comfy-node-install.sh /usr/local/bin/comfy-node-install
 RUN chmod +x /usr/local/bin/comfy-node-install
