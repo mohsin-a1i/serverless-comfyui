@@ -79,7 +79,7 @@ RUN uv pip install comfy-cli runpod requests websocket-client
 RUN uv cache clean
 
 # Install ComfyUI
-RUN /usr/bin/yes | comfy --workspace /app/comfyui install --version 0.9.2 --skip-manager --skip-torch-or-directml --nvidia;
+RUN /usr/bin/yes | comfy --workspace /app/comfyui install --version 0.9.2 --skip-torch-or-directml --nvidia;
 
 # Support for the network volume
 COPY src/extra_model_paths.yaml /app/comfyui/
@@ -90,6 +90,10 @@ RUN chmod +x /usr/local/bin/comfy-node-install
 
 # Install custom nodes using comfy-cli
 RUN comfy-node-install comfyui-kjnodes comfyui-videohelpersuite ComfyUI-WanVideoWrapper
+
+# Copy helper script to switch Comfy Manager network mode at container start
+COPY scripts/comfy-manager-set-mode.sh /usr/local/bin/comfy-manager-set-mode
+RUN chmod +x /usr/local/bin/comfy-manager-set-mode
 
 # Add application code and scripts
 ADD src/start.sh src/network_volume.py src/handler.py /app/

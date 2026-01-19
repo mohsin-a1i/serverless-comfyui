@@ -6,6 +6,9 @@ export LD_PRELOAD="${TCMALLOC}"
 
 echo "worker-comfyui: Starting ComfyUI"
 
+# Ensure ComfyUI-Manager runs in offline network mode inside the container
+comfy-manager-set-mode offline || echo "worker-comfyui - Could not set ComfyUI-Manager network_mode" >&2
+
 # Allow operators to tweak verbosity; default is INFO.
 : "${COMFY_LOG_LEVEL:=INFO}"
 : "${COMFY_OUTPUT_DIR:=output}"
