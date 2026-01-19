@@ -6,9 +6,7 @@ FROM nvidia/cuda:12.9.1-cudnn-devel-ubuntu24.04 AS builder
 # Install git and other tools
 RUN apt update && apt install -y \
     curl \
-    git \
-    clang \
-    lld
+    git
 
 # Install uv python manager
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -32,7 +30,7 @@ WORKDIR /SageAttention
 ENV TORCH_CUDA_ARCH_LIST="8.9;8.6"
 
 # Speed and memory optimization
-ENV TRITON_BUILD_WITH_CLANG_LLD=true EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
+ENV EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
 
 # Install SageAttention
 RUN uv run --active setup.py install
@@ -45,16 +43,14 @@ FROM nvidia/cuda:12.9.1-cudnn-runtime-ubuntu24.04
 # Speed up some cmake builds
 ENV CMAKE_BUILD_PARALLEL_LEVEL=8
 
-# Persistent Triton kernels and sped up compilation
-ENV TRITON_HOME=/runpod-volume TRITON_BUILD_WITH_CLANG_LLD=true TRITON_BUILD_WITH_CCACHE=true
+# Persistent Triton kernels
+ENV TRITON_HOME=/runpod-volume
 
 # Install git and other tools
 RUN apt-get update && apt-get install -y \
     curl \
     git \
-    clang \
-    lld \
-    ccache \
+    build-essential \
     libgl1 \
     libglib2.0-0 \
     libsm6 \
