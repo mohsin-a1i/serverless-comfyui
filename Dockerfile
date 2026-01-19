@@ -1,7 +1,7 @@
 #
 # Compilation Stage
 #
-FROM nvidia/cuda:13.0.2-cudnn-devel-ubuntu24.04 AS builder
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04 AS builder
 
 # Install git and other tools
 RUN apt update && apt install -y \
@@ -13,21 +13,21 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Create python venv
-RUN uv venv --python 3.14 --relocatable
+RUN uv venv --python 3.12 --relocatable
 ENV VIRTUAL_ENV=/.venv
 
 # Upgrade and install build tools
 RUN uv pip install --upgrade pip setuptools wheel packaging triton
 
 # Install PyTorch for CUDA 13.1
-RUN uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
+RUN uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
 # Clone SageAttention
 RUN git clone https://github.com/thu-ml/SageAttention.git
 WORKDIR /SageAttention
 
 # Configure GPU support
-ENV TORCH_CUDA_ARCH_LIST="8.9;8.6"
+ENV TORCH_CUDA_ARCH_LIST="8.9;8.6;8.0"
 
 # Speed and memory optimization
 ENV EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
@@ -38,7 +38,7 @@ RUN uv run --active setup.py install
 #
 # Application Stage
 #
-FROM nvidia/cuda:13.0.2-cudnn-runtime-ubuntu24.04
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
 
 # Speed up some cmake builds
 ENV CMAKE_BUILD_PARALLEL_LEVEL=8
@@ -63,7 +63,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Install python
-RUN uv python install 3.14
+RUN uv python install 3.12
 
 WORKDIR /app
 
@@ -96,7 +96,7 @@ COPY scripts/comfy-manager-set-mode.sh /usr/local/bin/comfy-manager-set-mode
 RUN chmod +x /usr/local/bin/comfy-manager-set-mode
 
 # Add application code and scripts
-ADD src/start.sh src/network_volume.py src/handler.py /app/
+COPY start.sh src/network_volume.py src/handler.py /app/
 RUN chmod +x /app/start.sh
 
 # Set the default command to run when starting the container
