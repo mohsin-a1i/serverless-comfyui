@@ -65,7 +65,7 @@ RUN uv python install 3.12
 WORKDIR /app
 
 # Configure python venv
-COPY --from=builder /.venv .venv
+COPY --from=builder /.venv /app/.venv
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 

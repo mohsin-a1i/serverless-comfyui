@@ -10,15 +10,16 @@ import os
 # Expected model types and their file extensions
 MODEL_TYPES = {
     "checkpoints": [".safetensors", ".ckpt", ".pt", ".pth", ".bin"],
+    "diffusion_models": [".safetensors", ".pt", ".pth", ".bin"],
+    "unet": [".safetensors", ".pt", ".bin"],
+    "upscale_models": [".safetensors", ".pt", ".pth"],
     "clip": [".safetensors", ".pt", ".bin"],
     "clip_vision": [".safetensors", ".pt", ".bin"],
-    "configs": [".yaml", ".json"],
     "controlnet": [".safetensors", ".pt", ".pth", ".bin"],
     "embeddings": [".safetensors", ".pt", ".bin"],
     "loras": [".safetensors", ".pt"],
-    "upscale_models": [".safetensors", ".pt", ".pth"],
     "vae": [".safetensors", ".pt", ".bin"],
-    "unet": [".safetensors", ".pt", ".bin"],
+    "configs": [".yaml", ".json"],
 }
 
 
@@ -134,13 +135,14 @@ def print_expected_structure():
     print("\n    Expected directory structure:")
     print("    /runpod-volume/")
     print("    └── models/")
-    print("        ├── checkpoints/    <- Put your .safetensors/.ckpt models here")
-    print("        ├── loras/          <- Put your LoRA files here")
-    print("        ├── vae/            <- Put your VAE files here")
-    print("        ├── clip/           <- Put your CLIP models here")
-    print("        ├── controlnet/     <- Put your ControlNet models here")
-    print("        ├── embeddings/     <- Put your embedding files here")
-    print("        └── upscale_models/ <- Put your upscale models here")
+    print("        ├── checkpoints/       <- Put your .safetensors/.ckpt models here")
+    print("        ├── diffusion_models/  <- Put your .safetensors models here")
+    print("        ├── loras/             <- Put your LoRA files here")
+    print("        ├── vae/               <- Put your VAE files here")
+    print("        ├── clip/              <- Put your CLIP models here")
+    print("        ├── controlnet/        <- Put your ControlNet models here")
+    print("        ├── embeddings/        <- Put your embedding files here")
+    print("        └── upscale_models/    <- Put your upscale models here")
 
 
 def format_size(size_bytes):
