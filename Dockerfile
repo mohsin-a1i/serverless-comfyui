@@ -1,11 +1,47 @@
+#
+# Compilation Stage
+#
+FROM nvidia/cuda:12.9.1-cudnn-devel-ubuntu24.04 as builder
+
+# Install git and other tools
+RUN apt update && apt install -y \
+    curl \
+    git
+
+# Install uv python manager
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
+# Create python venv
+RUN uv venv --python 3.12 --relocatable
+ENV VIRTUAL_ENV=/.venv
+
+# Upgrade and install build tools
+RUN uv pip install --upgrade pip setuptools wheel packaging triton
+
+# Install PyTorch for CUDA 12.9
+RUN uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu129
+
+# Clone SageAttention
+RUN git clone https://github.com/thu-ml/SageAttention.git
+WORKDIR /SageAttention
+
+# Configure GPU support
+ENV TORCH_CUDA_ARCH_LIST="8.9;8.6"
+
+# Install SageAttention
+ENV EXT_PARALLEL=4 NVCC_APPEND_FLAGS="--threads 8" MAX_JOBS=32
+RUN uv run --active setup.py install
+
+#
+# Application Stage
+#
 FROM nvidia/cuda:12.9.1-cudnn-runtime-ubuntu24.04
 
-# Prevents prompts from packages asking for user input during installation
-ENV DEBIAN_FRONTEND=noninteractive
 # Speed up some cmake builds
 ENV CMAKE_BUILD_PARALLEL_LEVEL=8
 
-# Install Python, git and other necessary tools
+# Install git and other tools
 RUN apt-get update && apt-get install -y \
     curl \
     git \
@@ -19,8 +55,6 @@ RUN apt-get update && apt-get install -y \
 # Clean up to reduce image size
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-
 # Install uv python manager
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
@@ -28,31 +62,18 @@ ENV PATH="/root/.local/bin:$PATH"
 # Install python
 RUN uv python install 3.12
 
-# Create python venv
-RUN uv venv -p 3.12
+WORKDIR /app
 
 # Configure python venv
+COPY --from=builder /.venv .venv
+ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Prefer binary wheels over source distributions for faster pip installations
-ENV PIP_PREFER_BINARY=1
-# Ensures output from python is printed immediately to the terminal without buffering
-ENV PYTHONUNBUFFERED=1
-# Prevent pip from asking for confirmation during uninstall steps in custom nodes
-ENV PIP_NO_INPUT=1
+# Install Comfy CLI and python dependencies
+RUN uv pip install comfy-cli runpod requests websocket-client
 
-# Upgrade pip / setuptools / wheel
-RUN uv pip install --upgrade pip setuptools wheel comfy-cli triton
-
-# Install PyTorch for CUDA 12.9
-RUN uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu129
-
-# Install SageAttention
-COPY wheels/sageattention-2.2.0-cp312-cp312-linux_aarch64.whl wheels/
-RUN uv pip install --no-index wheels/sageattention-2.2.0-cp312-cp312-linux_aarch64.whl
-
-# Install Python runtime dependencies for the handler
-RUN pip install runpod requests websocket-client
+# Clean up to reduce image size
+RUN uv cache clean
 
 # Install ComfyUI
 RUN /usr/bin/yes | comfy --workspace /app/comfyui install --version 0.9.2 --cuda-version 12.9 --nvidia;
@@ -60,7 +81,7 @@ RUN /usr/bin/yes | comfy --workspace /app/comfyui install --version 0.9.2 --cuda
 # Support for the network volume
 COPY src/extra_model_paths.yaml /app/comfyui/
 
-# Copy helper script to switch Manager network mode at container start
+# Copy helper script to switch Comfy Manager network mode at container start
 COPY scripts/comfy-manager-set-mode.sh /usr/local/bin/comfy-manager-set-mode
 RUN chmod +x /usr/local/bin/comfy-manager-set-mode
 
@@ -68,7 +89,7 @@ RUN chmod +x /usr/local/bin/comfy-manager-set-mode
 COPY scripts/comfy-node-install.sh /usr/local/bin/comfy-node-install
 RUN chmod +x /usr/local/bin/comfy-node-install
 
-# install custom nodes using comfy-cli
+# Install custom nodes using comfy-cli
 RUN comfy-node-install comfyui-kjnodes comfyui-videohelpersuite ComfyUI-WanVideoWrapper
 
 # Add application code and scripts
@@ -77,4 +98,7 @@ RUN chmod +x /app/start.sh
 
 # Set the default command to run when starting the container
 CMD ["./start.sh"]
+
+# ENTRYPOINT ["tail"]
+# CMD ["-f","/dev/null"]
 
