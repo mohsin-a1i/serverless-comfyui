@@ -79,7 +79,7 @@ RUN uv pip install comfy-cli runpod requests websocket-client
 RUN uv cache clean
 
 # Install ComfyUI
-RUN /usr/bin/yes | comfy --workspace /app/comfyui install --version 0.9.2 --cuda-version 12.9 --nvidia;
+RUN /usr/bin/yes | comfy --workspace /app/comfyui install --version 0.9.2 --skip-manager --cuda-version 12.9 --nvidia;
 
 # Support for the network volume
 COPY src/extra_model_paths.yaml /app/comfyui/
