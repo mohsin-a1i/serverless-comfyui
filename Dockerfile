@@ -16,7 +16,7 @@ RUN uv venv --python 3.12 --relocatable && \
     uv pip install --upgrade pip setuptools wheel packaging triton && \
     uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 && \
     uv cache clean
-ENV VIRTUAL_ENV=/app/.venv
+ENV VIRTUAL_ENV=/.venv
 
 # Compile and install SageAttention
 ENV TORCH_CUDA_ARCH_LIST="8.9;8.6;8.0"
