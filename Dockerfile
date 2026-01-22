@@ -49,20 +49,12 @@ RUN uv python install 3.12 && \
     uv pip install comfy-cli runpod requests websocket-client && \
     uv cache clean
 
-# Add helper scripts
-COPY backend/scripts/comfy-manager-set-mode.sh /usr/local/bin/comfy-manager-set-mode
-COPY backend/scripts/comfy-node-install.sh /usr/local/bin/comfy-node-install
-RUN chmod +x /usr/local/bin/comfy-manager-set-mode /usr/local/bin/comfy-node-install
-
-WORKDIR /app
-
 # Install ComfyUI
 RUN /usr/bin/yes | comfy --workspace comfyui install --version 0.9.2 --skip-torch-or-directml --nvidia && \
 comfy-node-install comfyui-kjnodes rgthree-comfy
-COPY backend/comfyui/extra_model_paths.yaml comfyui/
+COPY workflows/ comfyui/user/default/workflows/
 
-# Add Runpod serverless app
-COPY backend/start.sh backend/network_volume.py backend/handler.py .
+COPY backend/start.sh start.sh
 RUN chmod +x start.sh
 
 # Download Wan video generation models
@@ -75,7 +67,5 @@ RUN comfy model download --relative-path models/loras --filename wan2.2_i2v_A14b
 RUN comfy model download --relative-path models/loras --filename SVI_v2_PRO_Wan2.2-I2V-A14B_HIGH_lora_rank_128_fp16.safetensors --url "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/LoRAs/Stable-Video-Infinity/v2.0/SVI_v2_PRO_Wan2.2-I2V-A14B_HIGH_lora_rank_128_fp16.safetensors"
 RUN comfy model download --relative-path models/loras --filename SVI_v2_PRO_Wan2.2-I2V-A14B_LOW_lora_rank_128_fp16.safetensors --url "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/LoRAs/Stable-Video-Infinity/v2.0/SVI_v2_PRO_Wan2.2-I2V-A14B_LOW_lora_rank_128_fp16.safetensors"
 
+WORKDIR /app
 CMD ["./start.sh"]
-
-# ENTRYPOINT ["tail"]
-# CMD ["-f","/dev/null"]

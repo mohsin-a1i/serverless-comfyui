@@ -4,36 +4,24 @@
 TCMALLOC="$(ldconfig -p | grep -Po "libtcmalloc.so.\d" | head -n 1)"
 export LD_PRELOAD="${TCMALLOC}"
 
-echo "worker-comfyui: Starting ComfyUI"
+# Download loras defined by COMFY_LORAS environment variable
+# Expected format: COMFY_LORAS="https://huggingface.co/... https://civitai.com/..."
+if [ -z "$COMFY_LORAS" ]; then
+    for url in $COMFY_LORAS; do
+        [ -z "$url" ] && continue
 
-# Ensure ComfyUI-Manager runs in offline network mode inside the container
-comfy-manager-set-mode offline || echo "worker-comfyui - Could not set ComfyUI-Manager network_mode" >&2
+        echo "Downloading from $url ..."
 
-# Allow operators to tweak verbosity; default is INFO.
-: "${COMFY_LOG_LEVEL:=INFO}"
-: "${COMFY_OUTPUT_DIR:=output}"
+        comfy model download \
+            --relative-path models/loras \
+            --url "$url"
 
-# Serve the API and don't shutdown the container
-if [ "$SERVE_API_LOCALLY" == "true" ]; then
-    python -u comfyui/main.py --listen \
-        --use-sage-attention \
-        --disable-auto-launch \
-        --disable-metadata \
-        --output-directory "${COMFY_OUTPUT_DIR}" \
-        --verbose "${COMFY_LOG_LEVEL}" \
-        --log-stdout &
-
-    echo "worker-comfyui: Starting RunPod Handler"
-    python -u handler.py --rp_serve_api --rp_api_host=0.0.0.0
-else
-    python -u comfyui/main.py \
-        --use-sage-attention \
-        --disable-auto-launch \
-        --disable-metadata \
-        --output-directory "${COMFY_OUTPUT_DIR}" \
-        --verbose "${COMFY_LOG_LEVEL}" \
-        --log-stdout &
-
-    echo "worker-comfyui: Starting RunPod Handler"
-    python -u handler.py
+        if [ $? -ne 0 ]; then
+            echo "Failed to download from $url"
+        else
+            echo "Downloaded successfully from $url"
+        fi
+    done
 fi
+
+python comfyui/main.py --listen --use-sage-attention
