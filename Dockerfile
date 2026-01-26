@@ -4,15 +4,8 @@ FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04
 ENV CMAKE_BUILD_PARALLEL_LEVEL=8
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends openssh-server curl git build-essential libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 ffmpeg && \
+    apt-get install -y --no-install-recommends curl git build-essential libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 ffmpeg && \
     apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
-
-# Update SSH configuration (root login + key-only)
-RUN sed -i \
-    -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' \
-    -e 's/#PasswordAuthentication yes/PasswordAuthentication no/' \
-    -e 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' \
-    /etc/ssh/sshd_config
 
 # Install uv python manager
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
