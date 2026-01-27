@@ -43,7 +43,6 @@ comfy-manager-set-mode offline || echo "worker-comfyui - Could not set ComfyUI-M
 : "${COMFY_OUTPUT_DIR:=output}"
 
 python -u comfyui/main.py \
-    --fast fp16_accumulation \
     --use-sage-attention \
     --disable-auto-launch \
     --disable-metadata \
